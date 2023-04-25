@@ -1,0 +1,665 @@
+import java.awt.Font;
+
+import javafx.application.Application;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.Scene;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Alert.AlertType;
+import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableView;
+import javafx.scene.control.TextField;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.GridPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Pane;
+import javafx.scene.text.TextAlignment;
+import javafx.stage.Stage;
+
+public class GUI extends Application {
+	//Declarations
+	Stage stage;
+	private Scene scene;
+	static Bookstore bookStore = new Bookstore();
+	private TextField tfTitle, tfAuthor, tfGenre, tfPublished, tfPrice,
+		tfTitle2, tfAuthor2,tfISBN, tfGenre2, tfMinDate, tfMaxDate, tfMinPrice, tfMaxPrice;
+	
+	@Override
+	public void start(Stage stage) throws Exception {
+		this.stage = stage;
+		showMainMenu();
+	}
+	
+	public static void main(String[] args) {
+		Application.launch(args);
+	}
+
+
+	private Pane bookStoreGUI() {
+		GridPane pane = new GridPane();
+		pane.setAlignment(Pos.CENTER);
+		pane.setPadding(new Insets(20));
+		pane.setHgap(6);
+		pane.setVgap(10);
+		
+		
+		//Create buttons
+		Button btnAddBook = new Button("Add Book");
+		btnAddBook.setPrefWidth(100);
+		
+		Button btnSearch = new Button("Search");
+		btnSearch.setPrefWidth(100);
+
+		Button btnList = new Button("List All");
+		btnList.setPrefWidth(100);
+
+		Button btnDel = new Button("Delete Book");
+		btnDel.setPrefWidth(100);
+
+		//Add main menu list
+		pane.add(btnAddBook, 0, 0);
+		pane.add(btnSearch, 0, 1);
+		pane.add(btnList, 1, 0);
+		pane.add(btnDel, 1, 1);
+
+		//Add function to Add button
+		btnAddBook.setOnAction(e -> {
+			Pane root = addBookGUI();
+			scene = (new Scene(root, 400, 300));
+			stage.setScene(scene);
+			stage.setTitle("Add Book");
+			stage.show();
+		});
+		
+		//Add function to search button
+		btnSearch.setOnAction(e -> {
+			Pane root = searchGUI();
+			scene = (new Scene(root, 250,300));
+			stage.setScene(scene);
+			stage.setTitle("Search Book");
+			stage.show();
+		});
+		
+		//Add function to List all
+		btnList.setOnAction(e -> {
+			Pane root = listAllGUI();
+			scene = (new Scene(root, 800,300));
+			stage.setScene(scene);
+			stage.setTitle("All Books");
+			stage.show();
+		});
+
+		
+		return pane;
+	}
+	
+	private GridPane addBookGUI() {
+		GridPane pane = new GridPane();
+		pane.setAlignment(Pos.CENTER);
+		pane.setPadding(new Insets(20));
+		pane.setHgap(6);
+		pane.setVgap(6);
+		
+		//Create labels and text fields
+		Label lbTitle = new Label("Title: ");
+		//lbTitle.setTextAlignment(TextAlignment.RIGHT);	<-- doesnt work?
+		tfTitle = new TextField();
+	
+		Label lbAuthor = new Label("Author(s): ");
+		tfAuthor = new TextField();
+		
+		Label lbGenre = new Label("Genre: ");
+		tfGenre = new TextField();
+		
+		Label lbPublished = new Label("Date Published: ");
+		tfPublished = new TextField();
+		tfPublished.setPromptText("mm/dd/yyyy");
+		
+		Label lbPrice = new Label("Price:  $");
+		tfPrice = new TextField();
+		
+		//Create add button
+		Button btnAdd = new Button("Add");
+		btnAdd.setOnAction(e -> {
+			if(validateAdd()) {
+				bookStore.add(new Book(tfTitle.getText(), tfAuthor.getText(), tfGenre.getText(), tfPublished.getText(), Double.parseDouble(tfPrice.getText())));
+				Alert alert = new Alert(AlertType.CONFIRMATION);
+				alert.setTitle("Success Add");
+				alert.setHeaderText("ADD SUCCESSFUL");
+				alert.setContentText("Successfully added " + tfTitle.getText());
+
+				alert.show();
+				showMainMenu();
+			}
+		});
+		
+		//Create cancel button
+		Button btnCancel = new Button("Cancel");
+		btnCancel.setOnAction(e -> {
+			showMainMenu();
+		});
+
+		//Add labels and text fields
+		pane.add(lbTitle, 0, 0);
+		pane.add(tfTitle, 1, 0, 3, 1);
+		pane.add(lbAuthor, 0, 1);
+		pane.add(tfAuthor, 1, 1, 3, 1);
+		pane.add(lbGenre, 0, 2);
+		pane.add(tfGenre, 1, 2, 3, 1);
+		pane.add(lbPublished, 0, 3);
+		pane.add(tfPublished, 1, 3, 3, 1);
+		pane.add(lbPrice, 0, 4);
+		pane.add(tfPrice, 1, 4, 3, 1);
+		
+		pane.add(btnCancel, 2, 6);
+		pane.add(btnAdd, 3, 6);
+
+
+		return pane;
+	}
+		
+	//Display searchGUI
+	private BorderPane searchGUI() {
+		//Top text
+		BorderPane bPane = new BorderPane();
+		Label topText = new Label("Search");
+		bPane.setTop(topText);
+		BorderPane.setAlignment(topText, Pos.CENTER);
+		
+		//Bottom buttons
+		HBox hBox = new HBox();
+		hBox.setPadding(new Insets(10));
+		hBox.setAlignment(Pos.CENTER);
+		hBox.setSpacing(10);
+		
+		Button btnCancel = new Button("Cancel");
+		Button btnSearch = new Button("Search");
+		hBox.getChildren().addAll( btnCancel, btnSearch);
+		bPane.setBottom(hBox);
+		
+		//Add function to cancel button
+		btnCancel.setOnAction(e -> {
+			showMainMenu();
+		});
+		
+		//Enter search fields (At Least one field needs text)
+		GridPane pane = new GridPane();
+		pane.setAlignment(Pos.TOP_CENTER);
+		pane.setPadding(new Insets(20));
+		pane.setHgap(6);
+		pane.setVgap(6);
+		
+		bPane.setCenter(pane);
+		
+		//Create labels and text fields
+		//Title
+		Label lbTitle = new Label("Title: ");
+		tfTitle2 = new TextField();
+		tfTitle2.setPrefWidth(Double.MAX_VALUE);
+		
+		//Author
+		Label lbAuthor = new Label("Author: ");
+		tfAuthor2 = new TextField();
+		tfAuthor2.setPrefWidth(Double.MAX_VALUE);
+		
+		//ISBN
+		Label lbISBN = new Label("ISBN #: ");
+		tfISBN = new TextField();
+		tfISBN.setPrefWidth(Double.MAX_VALUE);
+		
+		//Genre
+		Label lbGenre = new Label("Genre: ");
+		tfGenre2 = new TextField();
+		tfGenre2.setPrefWidth(Double.MAX_VALUE);
+		
+		//Date (Range)
+		Label lbDate = new Label("Date: ");
+		tfMinDate = new TextField();
+		//Date(Min)
+		tfMinDate.setPrefWidth(Double.MAX_VALUE);
+		tfMinDate.setPromptText("Min");
+		//Date(Max)
+		tfMaxDate = new TextField();
+		tfMaxDate.setPrefWidth(Double.MAX_VALUE);
+		tfMaxDate.setPromptText("Max");
+
+		//Price (Range)
+		Label lbPrice = new Label("Price: ");
+		tfMinPrice = new TextField();
+		//Price(Min)
+		tfMinPrice.setPrefWidth(Double.MAX_VALUE);
+		tfMinPrice.setPromptText("Min");
+		//Price(Max)
+		tfMaxPrice = new TextField();
+		tfMaxPrice.setPrefWidth(Double.MAX_VALUE);
+		tfMaxPrice.setPromptText("Max");
+
+		//Add labels and text fields
+		pane.add(lbTitle, 0, 0);
+		pane.add(tfTitle2, 1, 0, 4, 1 );
+		pane.add(lbAuthor, 0, 1);
+		pane.add(tfAuthor2, 1, 1, 4, 1);
+		pane.add(lbISBN, 0, 2);
+		pane.add(tfISBN, 1, 2, 4, 1);
+		pane.add(lbGenre, 0, 3);
+		pane.add(tfGenre2, 1, 3, 4, 1);
+		pane.add(lbDate, 0, 4);
+		pane.add(tfMinDate, 1, 4, 2, 1);
+		pane.add(tfMaxDate, 3, 4, 2, 1);
+		pane.add(lbPrice, 0, 5);
+		pane.add(tfMinPrice, 1, 5, 2, 1);
+		pane.add(tfMaxPrice, 3, 5, 2, 1);
+
+		//Add function to search button
+		btnSearch.setOnAction(e ->{
+			if(validateSearch()) {
+				Pane root = searchTableGUI();
+				scene = (new Scene(root, 800, 300));
+				stage.setScene(scene);
+				stage.setTitle("Search Results");
+				stage.show();
+			}
+		});
+		
+		return bPane;
+	}
+	
+	//Displays error alerts for addBook GUI
+	private boolean validateAdd() {
+		Alert alert = new Alert(AlertType.ERROR);
+		
+		if(tfTitle.getText().isBlank()) {
+			alert.setTitle("Title Error");
+			alert.setHeaderText("BLANK TITLE");
+			alert.setContentText("Title field cannot be empty");
+			
+			alert.showAndWait();
+			return false;
+		} else if(tfAuthor.getText().isBlank()) {
+			alert.setTitle("Author Error");
+			alert.setHeaderText("BLANK AUTHOR");
+			alert.setContentText("Author(s) field cannot be empty");
+			alert.showAndWait();
+			return false;
+		} else if(tfGenre.getText().isBlank()) {
+			alert.setTitle("Genre Error");
+			alert.setHeaderText("BLANK GENRE");
+			alert.setContentText("Genre field cannot be empty");
+			
+			alert.showAndWait();
+			return false;
+		} else if(tfPublished.getText().isBlank()) {
+			alert.setTitle("Date Error");
+			alert.setHeaderText("BLANK DATE");
+			alert.setContentText("Date Published field cannot be empty");
+			
+			alert.showAndWait();
+			return false;
+		} else if(tfPrice.getText().isBlank()) {
+			alert.setTitle("Price Error");
+			alert.setHeaderText("BLANK PRICE");
+			alert.setContentText("Price field cannot be empty");
+			
+			alert.showAndWait();
+			return false;
+		}
+		
+		if(!checkDate(tfPublished)) {
+			alert.setTitle("Date Error");
+			alert.setHeaderText("INVALID DATE");
+			alert.setContentText("Please enter a valid date");
+			
+			alert.showAndWait();
+			return false;
+		} else if(!checkPrice(tfPrice)) {
+			alert.setTitle("Price Error");
+			alert.setHeaderText("INVALID PRICE");
+			alert.setContentText("Please enter a valid price");
+			
+			alert.showAndWait();
+			return false;
+		}
+		return true;
+	}
+	
+	//Displays error alerts for searchBook GUI
+	private boolean validateSearch() {
+		Alert alert = new Alert(AlertType.ERROR);
+		
+		//If all fields are blank, show error
+		if (tfTitle2.getText().isBlank() && tfAuthor2.getText().isBlank() && tfISBN.getText().isBlank() 
+				&& tfGenre2.getText().isBlank() 	&& tfMinDate.getText().isBlank() && tfMaxDate.getText().isBlank() 
+				&& tfMinPrice.getText().isBlank() && tfMaxPrice.getText().isBlank()) {
+			alert.setTitle("No Info Error");
+			alert.setHeaderText("NO INFO GIVEN");
+			alert.setContentText("Please fill at least one field");
+			alert.showAndWait();
+			return false;
+		}
+		
+		
+		//Validate all inputs
+		//Minimum date
+		if (!tfMinDate.getText().isBlank() && !checkDate(tfMinDate)) {
+			alert.setTitle("Date Error");
+			alert.setHeaderText("INVALID MIN DATE");
+			alert.setContentText("Please enter a valid  minimum date");
+			
+			alert.showAndWait();
+			return false;
+		}
+		//Maximum date
+		if (!tfMaxDate.getText().isBlank() && !checkDate(tfMaxDate)) {
+			alert.setTitle("Date Error");
+			alert.setHeaderText("INVALID MAX DATE");
+			alert.setContentText("Please enter a valid maximum date");
+			//alert.setContentText("Maximum date should be later than minimum date");
+			alert.showAndWait();
+			return false;
+		}
+		//Minimum price
+		if (!tfMinPrice.getText().isBlank() && !checkPrice(tfMinPrice)) {
+			alert.setTitle("Price Error");
+			alert.setHeaderText("INVALID MIN PRICE");
+			alert.setContentText("Please enter a valid minimum price");
+			
+			alert.showAndWait();
+			return false;
+		}
+		//Maximum price
+		if (!tfMaxPrice.getText().isBlank() && !checkPrice(tfMaxPrice)) {
+			alert.setTitle("Price Error");
+			alert.setHeaderText("INVALID MAX PRICE");
+			alert.setContentText("Please enter a valid maximum price");
+			
+			alert.showAndWait();
+			return false;
+		}
+		
+		//Check if max date > min date
+		if(!checkMaxDate(tfMinDate.getText())) {
+			alert.setTitle("Date Error");
+			alert.setHeaderText("INVALID MAX DATE");
+			alert.setContentText("Maximum date should be later than minimum date");
+		
+			alert.showAndWait();
+			return false;
+		}
+		
+		//Check if max price > min price
+		if(!tfMinPrice.getText().isBlank() && !checkMaxPrice(Double.parseDouble(tfMinPrice.getText()))) {
+			alert.setTitle("Price Error");
+			alert.setHeaderText("INVALID MAX PRICE");
+			alert.setContentText("Maximum price should be more than minimum price");
+		
+			alert.showAndWait();
+			return false;
+		}
+		
+		return true;	
+	}
+	
+	//Validate date 
+	private boolean checkDate(TextField textF) {
+		
+		//Check if date is not just a long number
+		if(!textF.getText().contains("/"))
+			return false;
+		
+		
+		String[] date = textF.getText().split("/");
+		
+		//Remove "/"s
+		String str = "";
+		for(int i = 0; i < date.length; i++) {
+			if(!date[i].isBlank())
+				str += date[i];
+			else
+				return false;
+		}
+		
+		//Make sure format is correct
+		if(date.length != 3)
+			return false;
+		
+		
+		
+		//Make sure date is all digits
+		for(int i = 0; i < str.length(); i++) 
+			if(!Character.isDigit(str.charAt(i))) 
+				return false;
+			
+		
+		switch(Integer.parseInt(date[0])) {
+			//All months with 31 days
+			case 1, 3, 5, 7, 8, 10, 12:
+				if(Integer.parseInt(date[1]) < 1 || Integer.parseInt(date[1]) > 31) 
+					return false;
+				else
+					return true;
+			//All months with 30 days
+			case 4, 6, 9, 11:
+				if(Integer.parseInt(date[1]) < 1 || Integer.parseInt(date[1]) > 30) 
+					return false;
+				else
+					return true;
+			
+			//All months with 28 days w/ leap year :)
+			case 2:
+				//If year is divisible by 4; leap year
+				if(Integer.parseInt(date[2]) % 4 == 0)
+					//If day is between 1 - 29
+					if(Integer.parseInt(date[1]) < 1 || Integer.parseInt(date[1]) > 29) {
+						return false;
+					} else {
+						return true;
+					}
+				
+				//Not leap year. If day is between 1 - 28
+				else if(Integer.parseInt(date[1]) < 1 || Integer.parseInt(date[1]) > 28)
+					return false;
+				else
+					return true;
+		}
+		
+		return false;
+	}
+
+	private boolean checkMaxDate(String minimDate) {
+		if(tfMinDate.getText().isBlank())
+			return true;
+		
+		if(tfMaxDate.getText().isBlank())
+			return true;
+		//[0]Month [1]Day [2]Year
+		String[] maxDate = tfMaxDate.getText().split("/");
+		String[] minDate = minimDate.split("/");
+
+		//If maxDate year < minDate year
+		if(Integer.parseInt(maxDate[2]) < Integer.parseInt(minDate[2]))
+			return false;
+		//If maxDate year == minDate year
+		else if(Integer.parseInt(maxDate[2]) == Integer.parseInt(minDate[2])) 
+			
+			//If maxDate month < minDate month
+			if(Integer.parseInt(maxDate[0]) < Integer.parseInt(minDate[0]))
+				return false;
+			//If maxDate month == minDate month
+			else if(Integer.parseInt(maxDate[0]) == Integer.parseInt(minDate[0]))
+				
+				//If maxDate day <  minDate day
+				if(Integer.parseInt(maxDate[1]) < Integer.parseInt(minDate[1]))
+					return false;
+				else
+					return true;
+
+		return true;
+		
+	}
+	
+	private boolean checkMaxPrice(double minPrice) {
+		//If there is no minimum price, max price is higher
+		if(tfMinPrice.getText().isBlank())
+			return true;
+		
+		//If there is no max price, min price is lower
+		if(tfMaxPrice.getText().isBlank())
+			return true;
+		
+		//Max price cannot be less than Min price
+		if(Double.parseDouble(tfMaxPrice.getText()) < minPrice)
+			return false;
+		
+		//Max price is higher than lower
+		return true;
+	}
+	
+	//Validate price
+	private boolean checkPrice(TextField textF) {
+		String str = textF.getText();
+		int count = 0;
+		
+		//Allow only one decimal point
+		for(int i = 0; i < str.length(); i++) 
+			if(str.charAt(i) == '.') {
+				count++;
+				if(count > 1)
+					return false;
+			}
+		
+		//Check if price is all digits
+		str = str.replace(".", "");
+		
+		for(int i = 0; i < str.length(); i++) 
+			if(!Character.isDigit(str.charAt(i))) 
+				return false;
+			
+		//Check for positive number
+				if(Double.parseDouble(str) < 0.0)
+					return false;
+		return true;		
+	}
+
+	//Change window to main menu
+	private void showMainMenu() {
+		Pane root = bookStoreGUI();
+		scene = (new Scene(root, 400, 300));
+		stage.setScene(scene);
+		stage.setTitle("Adriano's Books N' More");
+		stage.show();
+	}
+
+	ObservableList<Book> tvData = FXCollections.observableArrayList();
+	private Pane searchTableGUI() {
+		BorderPane pane = new BorderPane();
+		pane.setPadding(new Insets(20, 20, 20, 20));
+		
+		//Bottom buttons
+		HBox hBox = new HBox();
+		hBox.setPadding(new Insets(10));
+		hBox.setAlignment(Pos.CENTER);
+		hBox.setSpacing(10);
+		
+		Button btnDone = new Button("Done");
+		Button btnBack = new Button("Back");
+		hBox.getChildren().addAll(btnBack, btnDone);
+		
+		//Go to main menu
+		btnDone.setOnAction(e -> {
+			showMainMenu();
+		});
+		
+		//Go back to search
+		btnBack.setOnAction(e -> {
+			Pane root = searchGUI();
+			scene = (new Scene(root, 250,300));
+			stage.setScene(scene);
+			stage.setTitle("Search Book");
+			stage.show();
+		});
+		
+		pane.setBottom(hBox);
+		
+		//Make table and columns
+		TableView<Book> tv = new TableView<>();
+		TableColumn<Book, String> col1 = new TableColumn<>("ISBN");
+		col1.setCellValueFactory(new PropertyValueFactory("isbn"));
+		TableColumn<Book, String> col2 = new TableColumn<>("Title");
+		col2.setCellValueFactory(new PropertyValueFactory("title"));
+		TableColumn<Book, String> col3 = new TableColumn<>("Author(s)");
+		col3.setCellValueFactory(new PropertyValueFactory("authors"));
+		TableColumn<Book, String> col4 = new TableColumn<>("Genre");
+		col4.setCellValueFactory(new PropertyValueFactory("genre"));
+		TableColumn<Book, String> col5 = new TableColumn<>("Date Published");
+		col5.setCellValueFactory(new PropertyValueFactory("datePublished"));
+		TableColumn<Book, String> col6 = new TableColumn<>("Price");
+		col6.setCellValueFactory(new PropertyValueFactory("price"));
+		
+		tvData.add(new Book("Test Book", "Johnny", "Info", "2/20/2004", 14.99));
+		
+		tv.getColumns().addAll(col1, col2, col3, col4, col5, col6);
+		tv.setItems(tvData);
+
+		//Add books to table that match search
+		
+		pane.setCenter(tv);
+
+		
+		return pane;
+	}
+
+	
+	private Pane listAllGUI() {
+		ObservableList<Book> tvData2 = FXCollections.observableArrayList();
+		BorderPane pane = new BorderPane();
+		pane.setPadding(new Insets(20, 20, 20, 20));
+
+		//Bottom done button
+		HBox hBox = new HBox();
+		hBox.setPadding(new Insets(10));
+		hBox.setAlignment(Pos.CENTER);
+		hBox.setSpacing(10);
+		
+		Button btnDone = new Button("Done");
+		hBox.getChildren().add(btnDone);
+		pane.setBottom(hBox);
+		
+		
+		//Add function to done button
+		btnDone.setOnAction(e -> {
+			showMainMenu();
+		});
+		
+		//Make table and columns
+				TableView<Book> tv = new TableView<>();
+				TableColumn<Book, String> col1 = new TableColumn<>("ISBN");
+				col1.setCellValueFactory(new PropertyValueFactory("isbn"));
+				TableColumn<Book, String> col2 = new TableColumn<>("Title");
+				col2.setCellValueFactory(new PropertyValueFactory("title"));
+				TableColumn<Book, String> col3 = new TableColumn<>("Author(s)");
+				col3.setCellValueFactory(new PropertyValueFactory("authors"));
+				TableColumn<Book, String> col4 = new TableColumn<>("Genre");
+				col4.setCellValueFactory(new PropertyValueFactory("genre"));
+				TableColumn<Book, String> col5 = new TableColumn<>("Date Published");
+				col5.setCellValueFactory(new PropertyValueFactory("datePublished"));
+				TableColumn<Book, String> col6 = new TableColumn<>("Price");
+				col6.setCellValueFactory(new PropertyValueFactory("price"));
+				
+				for(int i = 0; i < bookStore.length(); i++) {
+					tvData2.add(bookStore.getBook(i));
+				}
+				
+				tv.getColumns().addAll(col1, col2, col3, col4, col5, col6);
+				tv.setItems(tvData2);
+		
+				pane.setCenter(tv);
+		return pane;
+	}
+	
+	
+}
